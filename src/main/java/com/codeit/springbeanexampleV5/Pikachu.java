@@ -1,0 +1,18 @@
+package com.codeit.springbeanexampleV5;
+
+import org.springframework.stereotype.Component;
+
+/** Pokemon 후보 빈입니다. 클래스 이름의 첫 글자를 소문자로 한 기본 빈 이름으로 등록됩니다. */
+@Component
+public class Pikachu implements Pokemon {
+
+    @Override
+    public void attack() {
+        System.out.println("피카츄 백만볼트⚡");
+    }
+
+    @Override
+    public String name() {
+        return "pikachu";
+    }
+}

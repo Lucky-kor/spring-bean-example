@@ -1,0 +1,9 @@
+# dev 프로파일일 때 공통 application.yml의 같은 키를 덮어씁니다.
+# spring.profiles.active/default는 이 파일에 넣지 말고 실행 인자 또는 공통 파일에서 지정하세요.
+server:
+  port: 8081 # console 예제는 서버를 열지 않으므로 port를 바꿔도 HTTP 요청을 받지 않습니다.
+my:
+  greeting: "Hello, Dev!"
+  service:
+    name: SpringDocs-dev
+# prod도 학습용입니다. 실제 DB 연결이나 외부 서비스 접근은 하지 않습니다.

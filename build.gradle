@@ -1,0 +1,79 @@
+// [0단계] Groovy DSL: 다운로드 → 컴파일 → 테스트 → 실행 JAR 생성을 정의합니다.
+// -Plesson은 Gradle이 실행 클래스를 고르는 옵션이고, Spring 프로파일은 --args로 전달합니다.
+plugins {
+    id 'java' // compileJava, test, jar 등 Java 프로젝트의 기본 task
+    id 'org.springframework.boot' version '4.1.1' // bootRun, bootJar 제공 (기존 Boot 4 유지)
+    id 'io.spring.dependency-management' version '1.1.7' // Boot BOM으로 라이브러리 호환 버전 관리
+}
+group = 'com.codeit' // 산출물 식별자입니다. Java 패키지를 자동 변경하지 않습니다.
+version = '0.0.1-SNAPSHOT' // 개발 중 버전이라는 관례
+description = '빈 등록, DI, 스코프, 외부 설정을 하나씩 실행하는 학습 프로젝트'
+
+java {
+    toolchain {
+        // Java 소스를 컴파일하는 JDK입니다. Gradle 자체 실행 JVM과 다릅니다.
+        // Gradle 9 실행에는 JDK 17 이상이 필요하며, 이 프로젝트는 JDK 17 설치도 필요합니다.
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+repositories {
+    mavenCentral() // 의존성의 POM/JAR을 찾는 저장소
+}
+dependencies {
+    // implementation: main 소스 컴파일과 실행 양쪽에 사용합니다.
+    // Boot 4의 MVC starter: 내장 Tomcat, Spring MVC, Jackson 3(JSON) 등을 가져옵니다.
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // @Validated + Jakarta 제약 검증
+    // 기존 코드의 @Getter/@Setter/@AllArgsConstructor 등이 접근자와 생성자를 만듭니다.
+    compileOnly 'org.projectlombok:lombok' // 컴파일에만 필요, 실행 JAR에는 넣지 않음
+    annotationProcessor 'org.projectlombok:lombok' // 실제 코드를 만드는 컴파일 시 처리기
+    // 아래 테스트 전용 선언과 test task는 기존 프로젝트의 기본 구성입니다. 지금 학습에서는 건너뜁니다.
+    // JUnit Jupiter 등은 테스트 소스에서만 사용되며 main 예제에는 사용하지 않습니다.
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testCompileOnly 'org.projectlombok:lombok' // 기존 테스트 소스의 컴파일용 선언
+    testAnnotationProcessor 'org.projectlombok:lombok' // 기존 테스트 소스의 코드 생성용 선언
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // 테스트 실행 시 런처
+    // 버전이 없는 의존성은 위 BOM을 따릅니다. Jackson만 따로 버전을 고정하지 마세요.
+}
+tasks.named('test') {
+    useJUnitPlatform() // org.junit.jupiter.api.Test를 발견하고 실행
+}
+
+// 기존 예제마다 main이 있습니다. 실행할 예제를 고르도록 mainClass만 명시합니다.
+// 각 실행 클래스의 기본 스캔 범위는 자신의 패키지 아래입니다. com.codeit 전체를 스캔하면 충돌합니다.
+def lessons = [
+    beans: 'com.codeit.springbeanexample.SpringBeanExampleApplicationV1',
+    lookup: 'com.codeit.springbeanexample.SpringBeanExampleApplicationV2',
+    scan: 'com.codeit.springbeanexampleV2.SpringBeanExampleApplication',
+    json: 'com.codeit.springbeanexampleV3.Application',
+    di: 'com.codeit.springbeanexampleV4.Application',
+    qualifier: 'com.codeit.springbeanexampleV5.PokemonApplication',
+    collection: 'com.codeit.springbeanexampleV6.PokemonApplication',
+    scope: 'com.codeit.scopeexample.Application',
+    session: 'com.codeit.springbeanexampleV7.Application',
+    lifecycle: 'com.codeit.springbeanexampleV8.Application',
+    depends: 'com.codeit.dependexample.Application',
+    order: 'com.codeit.dependexampleV2.Application',
+    value: 'com.codeit.propertiesexampleV1.Application',
+    binding: 'com.codeit.propertiesexampleV2.Application',
+    secret: 'com.codeit.propertiesExampleV3.Application',
+    profile: 'com.codeit.profileexampleV1.Application',
+    condition: 'com.codeit.conditionalexample.Application'
+]
+def selectedLesson = providers.gradleProperty('lesson').getOrElse('beans')
+if (!lessons.containsKey(selectedLesson)) {
+    throw new GradleException("알 수 없는 lesson: ${selectedLesson}. 선택 가능: ${lessons.keySet()}")
+}
+springBoot {
+    mainClass = lessons[selectedLesson] // bootRun과 bootJar에 동일하게 적용
+}
+tasks.register('lessons') {
+    group = 'help'
+    description = '학습 예제 ID와 실행 클래스를 출력합니다.'
+    doLast { lessons.each { id, className -> println "${id.padRight(12)} ${className}" } }
+}
+// ./gradlew lessons / ./gradlew bootRun -Plesson=di / ./gradlew bootJar
+// ./gradlew bootRun -Plesson=profile --args='--spring.profiles.active=prod'
+// ./gradlew bootJar -Plesson=session → 선택한 실행 클래스가 JAR의 진입점이 됩니다.
+// 의존성 확인: ./gradlew dependencies --configuration runtimeClasspath
+// -P는 Gradle 프로젝트 옵션입니다. -Pspring.profiles.active=prod는 앱에 자동 전달되지 않습니다.

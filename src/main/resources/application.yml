@@ -1,0 +1,36 @@
+# 모든 예제가 공유하는 공통 설정입니다. Java의 패키지마다 YAML을 따로 읽는 것이 아닙니다.
+spring:
+  application:
+    name: spring-bean-example
+  profiles:
+    # active를 고정하지 않습니다. 명시적 프로파일이 없을 때만 local이 적용됩니다.
+    # dev를 지정하면 공통 + dev를 읽습니다(local + dev가 아닙니다).
+    default: local
+server:
+  port: 8080 # 웹 예제 json/session에서만 실제 서버 포트로 사용합니다.
+my:
+  greeting: "Hello, Spring!" # value 실습의 @Value가 읽는 문자열
+  # username을 생략했으므로 @Value의 기본값 anonymous가 적용됩니다.
+  server-names: "dev.example.com,prod.example.com,local.example.com" # value용 쉼표 구분 문자열
+  service: # binding용 구조화된 설정
+    name: SpringDocs
+    port: 8081 # 서비스의 학습용 값입니다. server.port와 서로 다른 키입니다.
+    enabled: true
+  storage: # 실제 파일/S3에 접근하지 않는 바인딩 실습용 값
+    path: ./data/files
+    s3:
+      bucket: study-bucket
+      region: ap-northeast-2
+  servers: # List<Server>에 바인딩됩니다. 문자열 목록과 키를 분리했습니다.
+    - host: dev.example.com
+      port: 8080
+    - host: prod.example.com
+      port: 80
+    - host: local.example.com
+      port: 8888
+  settings: # Map<String, String>에 바인딩됩니다. 값의 타입 변환도 관찰하세요.
+    cache: true
+    max-connections: 20
+custom:
+  feature-x: false # condition: true일 때만 FeatureService 등록
+# my.password는 secret 프로파일에서만 선언합니다. 실제 비밀번호를 저장하지 마세요.
